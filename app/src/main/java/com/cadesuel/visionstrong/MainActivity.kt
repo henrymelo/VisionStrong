@@ -3,6 +3,8 @@ package com.cadesuel.visionstrong
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
@@ -22,13 +24,25 @@ import androidx.camera.view.PreviewView
 
 class MainActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
-    private var lastRightEyeClosedTime: Long = 0
-    private var lastLeftEyeClosedTime: Long = 0
     private var isRightEyeClosed = false
     private var isLeftEyeClosed = false
 
-    private var isSmiling = false
     private var isSmilingDetected = false // Flag para controlar a detecção de sorriso
+
+    // Variáveis para rastrear o tempo de fechamento dos olhos
+    private var rightEyeClosedStartTime: Long = 0
+    private var leftEyeClosedStartTime: Long = 0
+
+    // Handler e Runnable para controlar a detecção de olhos fechados por 1 segundo
+    private val handler = Handler(Looper.getMainLooper())
+    private val checkEyesRunnable = Runnable {
+        if (isRightEyeClosed) {
+            onRightEyeClosed()
+        }
+        if (isLeftEyeClosed) {
+            onLeftEyeClosed()
+        }
+    }
 
     companion object {
         private const val CAMERA_PERMISSION_CODE = 100
@@ -142,6 +156,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleFaces(faces: List<Face>) {
         var isSmilingNow = false // Variável para detectar se está sorrindo agora
+        var isRightEyeClosedNow = false // Variável para detectar se o olho direito está fechado agora
+        var isLeftEyeClosedNow = false // Variável para detectar se o olho esquerdo está fechado agora
 
         for (face in faces) {
             val leftEyeOpenProb = face.leftEyeOpenProbability ?: 1f
@@ -150,24 +166,52 @@ class MainActivity : AppCompatActivity() {
 
             // Verifica olho direito
             if (rightEyeOpenProb <= BLINK_THRESHOLD) {
-                isRightEyeClosed = true
-                lastRightEyeClosedTime = System.currentTimeMillis()
+                if (rightEyeClosedStartTime == 0L) {
+                    rightEyeClosedStartTime = System.currentTimeMillis()
+                }
+                isRightEyeClosedNow = true
             } else {
-                isRightEyeClosed = false
+                rightEyeClosedStartTime = 0L
+                isRightEyeClosedNow = false
             }
 
             // Verifica olho esquerdo
             if (leftEyeOpenProb <= BLINK_THRESHOLD) {
-                isLeftEyeClosed = true
-                lastLeftEyeClosedTime = System.currentTimeMillis()
+                if (leftEyeClosedStartTime == 0L) {
+                    leftEyeClosedStartTime = System.currentTimeMillis()
+                }
+                isLeftEyeClosedNow = true
             } else {
-                isLeftEyeClosed = false
+                leftEyeClosedStartTime = 0L
+                isLeftEyeClosedNow = false
             }
 
             // Verifica sorriso
             if (smilingProbability >= SMILE_THRESHOLD) {
                 isSmilingNow = true
             }
+        }
+
+        // Verifica se o olho direito foi fechado por pelo menos 1 segundo
+        if (isRightEyeClosedNow && rightEyeClosedStartTime != 0L) {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - rightEyeClosedStartTime >= EYE_CLOSED_DURATION && !isRightEyeClosed) {
+                isRightEyeClosed = true
+                onRightEyeClosed()
+            }
+        } else {
+            isRightEyeClosed = false
+        }
+
+        // Verifica se o olho esquerdo foi fechado por pelo menos 1 segundo
+        if (isLeftEyeClosedNow && leftEyeClosedStartTime != 0L) {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - leftEyeClosedStartTime >= EYE_CLOSED_DURATION && !isLeftEyeClosed) {
+                isLeftEyeClosed = true
+                onLeftEyeClosed()
+            }
+        } else {
+            isLeftEyeClosed = false
         }
 
         // Se o sorriso for detectado agora e não foi detectado antes, chama onSmileDetected()
@@ -200,5 +244,6 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
+        handler.removeCallbacks(checkEyesRunnable) // Remove callbacks ao destruir a atividade
     }
 }
