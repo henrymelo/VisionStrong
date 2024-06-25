@@ -18,4 +18,17 @@
         android:layout_alignParentEnd="true"
         android:layout_margin="16dp"/>
 
+    <TextView
+        android:id="@+id/pageIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="pág 1 de 1"
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:background="#80000000"
+        android:padding="8dp"/>
 </RelativeLayout>

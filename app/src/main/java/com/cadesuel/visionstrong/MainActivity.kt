@@ -12,8 +12,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
-import android.provider.OpenableColumns
+import android.util.Log
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
@@ -23,6 +26,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GestureDetectorCompat
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
@@ -33,13 +37,14 @@ import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import androidx.camera.view.PreviewView
-import android.util.Log
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var pdfImageView: ImageView
     private lateinit var pdfRenderer: PdfRenderer
     private lateinit var currentPage: PdfRenderer.Page
+    private lateinit var pageIndicator: TextView
+    private lateinit var gestureDetector: GestureDetectorCompat
     private var currentPageIndex = 0
     private var selectedPdfUri: Uri? = null
 
@@ -76,6 +81,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         pdfImageView = findViewById(R.id.pdfImageView)
+        pageIndicator = findViewById(R.id.pageIndicator)
+        gestureDetector = GestureDetectorCompat(this, this)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -319,6 +326,93 @@ class MainActivity : AppCompatActivity() {
         val bitmap = Bitmap.createBitmap(currentPage.width, currentPage.height, Bitmap.Config.ARGB_8888)
         currentPage.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
         pdfImageView.setImageBitmap(bitmap)
+        updatePageIndicator()
+    }
+
+    private fun updatePageIndicator() {
+        pageIndicator.text = "pág ${currentPageIndex + 1} de ${pdfRenderer.pageCount}"
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event)
+    }
+
+    override fun onDown(p0: MotionEvent): Boolean {
+        return true
+    }
+
+    override fun onShowPress(p0: MotionEvent) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onSingleTapUp(p0: MotionEvent): Boolean {
+        return false
+    }
+
+    override fun onScroll(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean {
+        if (p2 > 0) {
+            onRightSwipe()
+        } else if (p2 < 0) {
+            onLeftSwipe()
+        }
+        if (p3 > 0) {
+            onDownSwipe()
+        } else if (p3 < 0) {
+            onUpSwipe()
+        }
+        return true
+    }
+
+    override fun onLongPress(p0: MotionEvent) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onFling(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean {
+        return false
+    }
+
+    private fun onLeftSwipe() {
+        Log.i(TAG, "Left Swipe Detected - Empower Your Sight!")
+        runOnUiThread {
+            if (currentPageIndex < pdfRenderer.pageCount - 1) {
+                currentPage.close()
+                currentPageIndex += 1
+                showPage(currentPageIndex)
+            }
+        }
+    }
+
+    private fun onRightSwipe() {
+        Log.i(TAG, "Right Swipe Detected - Empower Your Sight!")
+        runOnUiThread {
+            if (currentPageIndex > 0) {
+                currentPage.close()
+                currentPageIndex -= 1
+                showPage(currentPageIndex)
+            }
+        }
+    }
+
+    private fun onDownSwipe() {
+        Log.i(TAG, "Down Swipe Detected - Empower Your Sight!")
+        runOnUiThread {
+            if (currentPageIndex < pdfRenderer.pageCount - 1) {
+                currentPage.close()
+                currentPageIndex += 1
+                showPage(currentPageIndex)
+            }
+        }
+    }
+
+    private fun onUpSwipe() {
+        Log.i(TAG, "Up Swipe Detected - Empower Your Sight!")
+        runOnUiThread {
+            if (currentPageIndex > 0) {
+                currentPage.close()
+                currentPageIndex -= 1
+                showPage(currentPageIndex)
+            }
+        }
     }
 
     override fun onDestroy() {
