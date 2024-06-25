@@ -74,6 +74,8 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         private const val BLINK_THRESHOLD = 0.5 // Limiar para detecção de olho fechado
         private const val EYE_CLOSED_DURATION = 1000 // Tempo em milissegundos para considerar o olho fechado (1 segundo)
         private const val SMILE_THRESHOLD = 0.8 // Limiar para detecção de sorriso
+        private const val KEY_PDF_URI = "KEY_PDF_URI"
+        private const val KEY_CURRENT_PAGE_INDEX = "KEY_CURRENT_PAGE_INDEX"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,8 +95,23 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
             requestCameraPermission()
         }
 
-        // Solicitar a seleção do PDF
-        selectPdf()
+        if (savedInstanceState != null) {
+            selectedPdfUri = savedInstanceState.getParcelable(KEY_PDF_URI)
+            currentPageIndex = savedInstanceState.getInt(KEY_CURRENT_PAGE_INDEX, 0)
+            selectedPdfUri?.let {
+                openRenderer(this, it)
+                showPage(currentPageIndex)
+            }
+        } else {
+            // Solicitar a seleção do PDF
+            selectPdf()
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putParcelable(KEY_PDF_URI, selectedPdfUri)
+        outState.putInt(KEY_CURRENT_PAGE_INDEX, currentPageIndex)
     }
 
     private fun checkCameraPermission(): Boolean {
