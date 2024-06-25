@@ -16,6 +16,7 @@ import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -44,6 +45,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     private lateinit var pdfRenderer: PdfRenderer
     private lateinit var currentPage: PdfRenderer.Page
     private lateinit var pageIndicator: TextView
+    private lateinit var loadingIndicator: ProgressBar
     private lateinit var gestureDetector: GestureDetectorCompat
     private var currentPageIndex = 0
     private var selectedPdfUri: Uri? = null
@@ -82,6 +84,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
 
         pdfImageView = findViewById(R.id.pdfImageView)
         pageIndicator = findViewById(R.id.pageIndicator)
+        loadingIndicator = findViewById(R.id.loadingIndicator)
         gestureDetector = GestureDetectorCompat(this, this)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -124,11 +127,14 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         if (requestCode == READ_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             data?.data?.also { uri ->
                 selectedPdfUri = uri
+                loadingIndicator.visibility = ProgressBar.VISIBLE
                 try {
                     openRenderer(this, uri)
                     showPage(currentPageIndex)
                 } catch (e: IOException) {
                     e.printStackTrace()
+                } finally {
+                    loadingIndicator.visibility = ProgressBar.GONE
                 }
             }
         }
