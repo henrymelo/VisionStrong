@@ -23,7 +23,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -37,7 +36,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import androidx.camera.view.PreviewView
 
 class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     private lateinit var cameraExecutor: ExecutorService
@@ -140,30 +138,11 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<String>, grantResults: IntArray
-    ) {
-        if (requestCode == CAMERA_PERMISSION_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startCamera()
-            } else {
-                Toast.makeText(this, "Permissão da câmera foi negada", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
-
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    val previewView = findViewById<PreviewView>(R.id.viewFinder)
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
 
             val imageAnalyzer = ImageAnalysis.Builder()
                 .build()
@@ -178,7 +157,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageAnalyzer
+                    this, cameraSelector, imageAnalyzer
                 )
             } catch (exc: Exception) {
                 Log.e(TAG, "Erro ao iniciar a câmera: ${exc.message}")
@@ -347,9 +326,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         return true
     }
 
-    override fun onShowPress(p0: MotionEvent) {
-        TODO("Not yet implemented")
-    }
+    override fun onShowPress(p0: MotionEvent) {}
 
     override fun onSingleTapUp(p0: MotionEvent): Boolean {
         return false
@@ -369,9 +346,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         return true
     }
 
-    override fun onLongPress(p0: MotionEvent) {
-        TODO("Not yet implemented")
-    }
+    override fun onLongPress(p0: MotionEvent) {}
 
     override fun onFling(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean {
         return false
