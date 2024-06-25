@@ -15,7 +15,6 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
-import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -27,6 +26,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
+import com.github.chrisbanes.photoview.PhotoView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
@@ -39,7 +39,7 @@ import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     private lateinit var cameraExecutor: ExecutorService
-    private lateinit var pdfImageView: ImageView
+    private lateinit var pdfImageView: PhotoView
     private lateinit var pdfRenderer: PdfRenderer
     private lateinit var currentPage: PdfRenderer.Page
     private lateinit var pageIndicator: TextView
@@ -328,6 +328,8 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         val bitmap = Bitmap.createBitmap(currentPage.width, currentPage.height, Bitmap.Config.ARGB_8888)
         currentPage.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
         pdfImageView.setImageBitmap(bitmap)
+        pdfImageView.setScaleLevels(1.0f, 2.0f, 4.0f)
+        pdfImageView.setScale(1.0f, true)
         updatePageIndicator()
     }
 

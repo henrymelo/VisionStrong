@@ -61,6 +61,8 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.1.0")
     implementation("androidx.camera:camera-lifecycle:1.1.0")
     implementation("androidx.camera:camera-view:1.1.0")
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
+
     //implementation("com.google.mlkit:face-detection:16.1.5")
 
 //         implementation("com.github.barteksc:android-pdf-viewer:2.8.2")
