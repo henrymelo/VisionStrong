@@ -37,7 +37,7 @@ import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
+class MainActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var pdfImageView: PhotoView
     private lateinit var pdfRenderer: PdfRenderer
@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         pdfImageView = findViewById(R.id.pdfImageView)
         pageIndicator = findViewById(R.id.pageIndicator)
         loadingIndicator = findViewById(R.id.loadingIndicator)
-        gestureDetector = GestureDetectorCompat(this, this)
+        gestureDetector = GestureDetectorCompat(this, GestureListener())
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -105,6 +105,10 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         } else {
             // Solicitar a seleção do PDF
             selectPdf()
+        }
+
+        pdfImageView.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
         }
     }
 
@@ -337,80 +341,53 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         pageIndicator.text = "pág ${currentPageIndex + 1} de ${pdfRenderer.pageCount}"
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event)
-    }
+    private inner class GestureListener : GestureDetector.SimpleOnGestureListener() {
+        private val SWIPE_THRESHOLD = 100
+        private val SWIPE_VELOCITY_THRESHOLD = 100
 
-    override fun onDown(p0: MotionEvent): Boolean {
-        return true
-    }
-
-    override fun onShowPress(p0: MotionEvent) {}
-
-    override fun onSingleTapUp(p0: MotionEvent): Boolean {
-        return false
-    }
-
-    override fun onScroll(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean {
-        if (p2 > 0) {
-            onRightSwipe()
-        } else if (p2 < 0) {
-            onLeftSwipe()
+        override fun onDown(p0: MotionEvent): Boolean {
+            return true
         }
-        if (p3 > 0) {
-            onDownSwipe()
-        } else if (p3 < 0) {
-            onUpSwipe()
-        }
-        return true
-    }
 
-    override fun onLongPress(p0: MotionEvent) {}
-
-    override fun onFling(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean {
-        return false
-    }
-
-    private fun onLeftSwipe() {
-        Log.i(TAG, "Left Swipe Detected - Empower Your Sight!")
-        runOnUiThread {
-            if (currentPageIndex < pdfRenderer.pageCount - 1) {
-                currentPage.close()
-                currentPageIndex += 1
-                showPage(currentPageIndex)
+        override fun onFling(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean {
+            if (p0 == null || p1 == null) return false
+            val diffX = p1.x - p0.x
+            val diffY = p1.y - p0.y
+            return if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(p2) > SWIPE_VELOCITY_THRESHOLD) {
+                    if (diffX > 0) {
+                        onRightSwipe()
+                    } else {
+                        onLeftSwipe()
+                    }
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
             }
         }
-    }
 
-    private fun onRightSwipe() {
-        Log.i(TAG, "Right Swipe Detected - Empower Your Sight!")
-        runOnUiThread {
-            if (currentPageIndex > 0) {
-                currentPage.close()
-                currentPageIndex -= 1
-                showPage(currentPageIndex)
+        private fun onLeftSwipe() {
+            Log.i(TAG, "Left Swipe Detected - Empower Your Sight!")
+            runOnUiThread {
+                if (currentPageIndex < pdfRenderer.pageCount - 1) {
+                    currentPage.close()
+                    currentPageIndex += 1
+                    showPage(currentPageIndex)
+                }
             }
         }
-    }
 
-    private fun onDownSwipe() {
-        Log.i(TAG, "Down Swipe Detected - Empower Your Sight!")
-        runOnUiThread {
-            if (currentPageIndex < pdfRenderer.pageCount - 1) {
-                currentPage.close()
-                currentPageIndex += 1
-                showPage(currentPageIndex)
-            }
-        }
-    }
-
-    private fun onUpSwipe() {
-        Log.i(TAG, "Up Swipe Detected - Empower Your Sight!")
-        runOnUiThread {
-            if (currentPageIndex > 0) {
-                currentPage.close()
-                currentPageIndex -= 1
-                showPage(currentPageIndex)
+        private fun onRightSwipe() {
+            Log.i(TAG, "Right Swipe Detected - Empower Your Sight!")
+            runOnUiThread {
+                if (currentPageIndex > 0) {
+                    currentPage.close()
+                    currentPageIndex -= 1
+                    showPage(currentPageIndex)
+                }
             }
         }
     }
