@@ -65,6 +65,7 @@ dependencies {
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
     implementation("com.github.billthefarmer:mididriver:v1.24")
     implementation("com.github.ag5ur:javax.sound.midi-android:v0.0.4-alpha.2")
+    implementation("androidx.webkit:webkit:1.4.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

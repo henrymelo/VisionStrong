@@ -15,6 +15,8 @@ import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import android.webkit.WebSettings
+import android.webkit.WebView
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -54,6 +56,7 @@ class MainActivity : AppCompatActivity(), MidiDriver.OnMidiStartListener {
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var selectPdfButton: Button
     private lateinit var selectMusicXmlButton: Button
+    private lateinit var musicXmlWebView: WebView
     private var currentPageIndex = 0
     private var selectedPdfUri: Uri? = null
 
@@ -97,6 +100,7 @@ class MainActivity : AppCompatActivity(), MidiDriver.OnMidiStartListener {
         loadingIndicator = findViewById(R.id.loadingIndicator)
         selectPdfButton = findViewById(R.id.selectPdfButton)
         selectMusicXmlButton = findViewById(R.id.selectMusicXmlButton)
+        musicXmlWebView = findViewById(R.id.musicXmlWebView)
         gestureDetector = GestureDetectorCompat(this, GestureListener())
 
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -139,6 +143,8 @@ class MainActivity : AppCompatActivity(), MidiDriver.OnMidiStartListener {
         pdfImageView.setOnTouchListener { _, event ->
             gestureDetector.onTouchEvent(event)
         }
+
+        setupWebView()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -385,11 +391,58 @@ class MainActivity : AppCompatActivity(), MidiDriver.OnMidiStartListener {
         pdfImageView.setScale(1.0f, true)
         pdfImageView.visibility = View.VISIBLE
         pageIndicator.visibility = View.VISIBLE
+        musicXmlWebView.visibility = View.GONE
         updatePageIndicator()
     }
 
     private fun updatePageIndicator() {
         pageIndicator.text = "pág ${currentPageIndex + 1} de ${pdfRenderer.pageCount}"
+    }
+
+    private fun setupWebView() {
+        val webSettings: WebSettings = musicXmlWebView.settings
+        webSettings.javaScriptEnabled = true
+        musicXmlWebView.setBackgroundColor(0x00000000)
+        musicXmlWebView.loadData(
+            """
+            <html>
+            <head>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/3.0.9/vexflow-min.js"></script>
+            </head>
+            <body>
+                <div id="vf"></div>
+                <script>
+                    function drawMusic(xml) {
+                        const VF = Vex.Flow;
+                        const div = document.getElementById('vf');
+                        const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+                        renderer.resize(500, 500);
+                        const context = renderer.getContext();
+                        const stave = new VF.Stave(10, 40, 400);
+                        stave.addClef("treble").setContext(context).draw();
+                        
+                        // Use um parser XML para converter MusicXML para VexFlow StaveNotes aqui
+                        // Exemplo básico de notas
+                        const notes = [
+                            new VF.StaveNote({clef: "treble", keys: ["c/4"], duration: "q"}),
+                            new VF.StaveNote({clef: "treble", keys: ["d/4"], duration: "q"}),
+                            new VF.StaveNote({clef: "treble", keys: ["e/4"], duration: "q"}),
+                            new VF.StaveNote({clef: "treble", keys: ["f/4"], duration: "q"})
+                        ];
+                        
+                        const voice = new VF.Voice({num_beats: 4,  beat_value: 4});
+                        voice.addTickables(notes);
+                        
+                        const formatter = new VF.Formatter().joinVoices([voice]).format([voice], 400);
+                        voice.draw(context, stave);
+                    }
+                    
+                    drawMusic();
+                </script>
+            </body>
+            </html>
+            """.trimIndent(), "text/html", "UTF-8"
+        )
     }
 
     override fun onMidiStart() {
@@ -398,11 +451,11 @@ class MainActivity : AppCompatActivity(), MidiDriver.OnMidiStartListener {
     }
 
     private fun showMusicXML(musicXmlContent: String) {
-        // Exibir o conteúdo do MusicXML de uma forma simples
-        // Aqui você pode usar uma biblioteca para converter MusicXML para uma imagem ou exibir diretamente o XML
-        val textView = TextView(this)
-        textView.text = musicXmlContent
-        setContentView(textView)
+        // Use a biblioteca VexFlow para renderizar o MusicXML em um WebView
+        musicXmlWebView.visibility = View.VISIBLE
+        pdfImageView.visibility = View.GONE
+        pageIndicator.visibility = View.GONE
+        musicXmlWebView.evaluateJavascript("drawMusic(`$musicXmlContent`);", null)
     }
 
     private fun playMusicXML(musicXmlContent: String) {
