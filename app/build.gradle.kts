@@ -61,17 +61,10 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.1.0")
     implementation("androidx.camera:camera-lifecycle:1.1.0")
     implementation("androidx.camera:camera-view:1.1.0")
+    implementation("com.google.android.gms:play-services-mlkit-face-detection:16.1.2")
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
-
-    //implementation("com.google.mlkit:face-detection:16.1.5")
-
-//         implementation("com.github.barteksc:android-pdf-viewer:2.8.2")
-        implementation("com.google.android.gms:play-services-mlkit-face-detection:16.1.2")
-//        implementation("com.github.barteksc:android-pdf-viewer:3.2.0-beta.1")
-        // Adicione outras dependências conforme necessário
-
-
-
+    implementation("com.github.billthefarmer:mididriver:v1.24")
+    implementation("com.github.ag5ur:javax.sound.midi-android:v0.0.4-alpha.2")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

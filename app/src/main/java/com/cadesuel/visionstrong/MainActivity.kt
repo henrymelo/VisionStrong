@@ -11,10 +11,11 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.ParcelFileDescriptor
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -31,13 +32,19 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import org.billthefarmer.mididriver.MidiDriver
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import javax.sound.midi.MidiSystem
+import javax.sound.midi.Sequence
+import javax.sound.midi.Sequencer
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), MidiDriver.OnMidiStartListener {
+    private lateinit var midiDriver: MidiDriver
+    private lateinit var sequencer: Sequencer
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var pdfImageView: PhotoView
     private lateinit var pdfRenderer: PdfRenderer
@@ -45,6 +52,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pageIndicator: TextView
     private lateinit var loadingIndicator: ProgressBar
     private lateinit var gestureDetector: GestureDetectorCompat
+    private lateinit var selectPdfButton: Button
+    private lateinit var selectMusicXmlButton: Button
     private var currentPageIndex = 0
     private var selectedPdfUri: Uri? = null
 
@@ -71,6 +80,7 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "MainActivity"
         private const val CAMERA_PERMISSION_CODE = 100
         private const val READ_REQUEST_CODE = 101
+        private const val MUSICXML_REQUEST_CODE = 102
         private const val BLINK_THRESHOLD = 0.5 // Limiar para detecção de olho fechado
         private const val EYE_CLOSED_DURATION = 1000 // Tempo em milissegundos para considerar o olho fechado (1 segundo)
         private const val SMILE_THRESHOLD = 0.8 // Limiar para detecção de sorriso
@@ -85,9 +95,23 @@ class MainActivity : AppCompatActivity() {
         pdfImageView = findViewById(R.id.pdfImageView)
         pageIndicator = findViewById(R.id.pageIndicator)
         loadingIndicator = findViewById(R.id.loadingIndicator)
+        selectPdfButton = findViewById(R.id.selectPdfButton)
+        selectMusicXmlButton = findViewById(R.id.selectMusicXmlButton)
         gestureDetector = GestureDetectorCompat(this, GestureListener())
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        midiDriver = MidiDriver.getInstance()
+        midiDriver.setOnMidiStartListener(this)
+        midiDriver.start()
+
+        try {
+            sequencer = MidiSystem.getSequencer().apply {
+                open()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         if (checkCameraPermission()) {
             startCamera()
@@ -102,9 +126,14 @@ class MainActivity : AppCompatActivity() {
                 openRenderer(this, it)
                 showPage(currentPageIndex)
             }
-        } else {
-            // Solicitar a seleção do PDF
+        }
+
+        selectPdfButton.setOnClickListener {
             selectPdf()
+        }
+
+        selectMusicXmlButton.setOnClickListener {
+            selectMusicXML()
         }
 
         pdfImageView.setOnTouchListener { _, event ->
@@ -141,19 +170,39 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, READ_REQUEST_CODE)
     }
 
+    private fun selectMusicXML() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/xml"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/xml", "text/xml"))
+        }
+        startActivityForResult(intent, MUSICXML_REQUEST_CODE)
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == READ_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+        if (resultCode == Activity.RESULT_OK) {
             data?.data?.also { uri ->
-                selectedPdfUri = uri
-                loadingIndicator.visibility = ProgressBar.VISIBLE
-                try {
-                    openRenderer(this, uri)
-                    showPage(currentPageIndex)
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                } finally {
-                    loadingIndicator.visibility = ProgressBar.GONE
+                when (requestCode) {
+                    READ_REQUEST_CODE -> {
+                        selectedPdfUri = uri
+                        loadingIndicator.visibility = ProgressBar.VISIBLE
+                        try {
+                            openRenderer(this, uri)
+                            showPage(currentPageIndex)
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                        } finally {
+                            loadingIndicator.visibility = ProgressBar.GONE
+                        }
+                    }
+                    MUSICXML_REQUEST_CODE -> {
+                        val musicXmlContent = contentResolver.openInputStream(uri)?.bufferedReader().use { it?.readText() }
+                        musicXmlContent?.let {
+                            showMusicXML(it)
+                            playMusicXML(it)
+                        }
+                    }
                 }
             }
         }
@@ -334,6 +383,8 @@ class MainActivity : AppCompatActivity() {
         pdfImageView.setImageBitmap(bitmap)
         pdfImageView.setScaleLevels(1.0f, 2.0f, 4.0f)
         pdfImageView.setScale(1.0f, true)
+        pdfImageView.visibility = View.VISIBLE
+        pageIndicator.visibility = View.VISIBLE
         updatePageIndicator()
     }
 
@@ -341,20 +392,49 @@ class MainActivity : AppCompatActivity() {
         pageIndicator.text = "pág ${currentPageIndex + 1} de ${pdfRenderer.pageCount}"
     }
 
+    override fun onMidiStart() {
+        // Inicializar a MIDI quando o driver começar
+        Log.i(TAG, "MIDI driver started")
+    }
+
+    private fun showMusicXML(musicXmlContent: String) {
+        // Exibir o conteúdo do MusicXML de uma forma simples
+        // Aqui você pode usar uma biblioteca para converter MusicXML para uma imagem ou exibir diretamente o XML
+        val textView = TextView(this)
+        textView.text = musicXmlContent
+        setContentView(textView)
+    }
+
+    private fun playMusicXML(musicXmlContent: String) {
+        // Reproduzir o conteúdo do MusicXML como MIDI
+        try {
+            val tempFile = File.createTempFile("music", ".mid")
+            val outputStream = FileOutputStream(tempFile)
+            outputStream.write(musicXmlContent.toByteArray())
+            outputStream.close()
+
+            val sequence: Sequence = MidiSystem.getSequence(tempFile)
+            sequencer.sequence = sequence
+            sequencer.start()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private inner class GestureListener : GestureDetector.SimpleOnGestureListener() {
         private val SWIPE_THRESHOLD = 100
         private val SWIPE_VELOCITY_THRESHOLD = 100
 
-        override fun onDown(p0: MotionEvent): Boolean {
+        override fun onDown(event: MotionEvent): Boolean {
             return true
         }
 
-        override fun onFling(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean {
-            if (p0 == null || p1 == null) return false
-            val diffX = p1.x - p0.x
-            val diffY = p1.y - p0.y
+        override fun onFling(event1: MotionEvent?, event2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+            if (event1 == null || event2 == null) return false
+            val diffX = event2.x - event1.x
+            val diffY = event2.y - event1.y
             return if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(p2) > SWIPE_VELOCITY_THRESHOLD) {
+                if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
                     if (diffX > 0) {
                         onRightSwipe()
                     } else {
@@ -398,5 +478,10 @@ class MainActivity : AppCompatActivity() {
         handler.removeCallbacks(checkEyesRunnable) // Remove callbacks ao destruir a atividade
         currentPage.close()
         pdfRenderer.close()
+        midiDriver.stop()
+        if (::sequencer.isInitialized) {
+            sequencer.stop()
+            sequencer.close()
+        }
     }
 }

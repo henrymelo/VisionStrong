@@ -4,11 +4,29 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <Button
+        android:id="@+id/selectPdfButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select PDF"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:id="@+id/selectMusicXmlButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select MusicXML"
+        android:layout_below="@id/selectPdfButton"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp" />
+
     <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/pdfImageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitCenter"/>
+        android:layout_below="@id/selectMusicXmlButton"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/pageIndicator"
@@ -16,18 +34,15 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginBottom="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_margin="8dp"
         android:text="pág 1 de 1"
-        android:textSize="16sp"
-        android:textColor="@android:color/white"
-        android:background="#80000000"
-        android:padding="8dp"/>
+        android:visibility="gone" />
 
     <ProgressBar
         android:id="@+id/loadingIndicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:visibility="gone"/>
+        android:visibility="gone" />
+
 </RelativeLayout>

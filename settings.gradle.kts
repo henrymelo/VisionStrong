@@ -11,7 +11,15 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven(url = "https://jitpack.io")
+        maven {
+            url = uri("https://jitpack.io")
+        }
+        maven {
+            url = uri("https://github.com/kshoji/BLE-MIDI-for-Android/raw/master/library/repository")
+        }
+        maven {
+            url = uri("https://github.com/kshoji/USB-MIDI-Driver/raw/master/library/repository")
+        }
     }
 }
 
