@@ -1,48 +1,59 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/selectPdfButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Select PDF" />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/selectMusicXmlButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/selectPdfButton"
-        android:text="Select MusicXML" />
+        <Button
+            android:id="@+id/selectPdfButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select PDF" />
+
+        <Button
+            android:id="@+id/selectMusicXmlButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/selectPdfButton"
+            android:text="Select MusicXML" />
+
+        <ProgressBar
+            android:id="@+id/loadingIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="gone" />
+
+        <com.github.chrisbanes.photoview.PhotoView
+            android:id="@+id/pdfImageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/selectMusicXmlButton"
+            android:background="#FFFFFF" />
+
+        <WebView
+            android:id="@+id/musicXmlWebView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/selectMusicXmlButton"
+            android:background="#FFFFFF"
+            android:visibility="gone" />
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/pageIndicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/selectMusicXmlButton"
-        android:text="Page Indicator" />
-
-    <ProgressBar
-        android:id="@+id/loadingIndicator"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:visibility="gone" />
-
-    <com.github.chrisbanes.photoview.PhotoView
-        android:id="@+id/pdfImageView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/pageIndicator"
-        android:background="#FFFFFF" />
-
-    <WebView
-        android:id="@+id/musicXmlWebView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="0dp"
+        android:text="Page Indicator"
         android:background="#FFFFFF"
-        android:visibility="gone" />
-</RelativeLayout>
+        android:textColor="#000000"
+        android:padding="0dp"
+        android:elevation="0dp"/>
+</FrameLayout>
