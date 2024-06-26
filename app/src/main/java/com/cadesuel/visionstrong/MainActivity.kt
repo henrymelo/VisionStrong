@@ -402,14 +402,14 @@ class MainActivity : AppCompatActivity(), MidiDriver.OnMidiStartListener {
     private fun setupWebView() {
         val webSettings: WebSettings = musicXmlWebView.settings
         webSettings.javaScriptEnabled = true
-        musicXmlWebView.setBackgroundColor(0x00000000)
+        musicXmlWebView.setBackgroundColor(0xFFFFFFFF.toInt())
         musicXmlWebView.loadData(
             """
             <html>
             <head>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/3.0.9/vexflow-min.js"></script>
             </head>
-            <body>
+            <body style="background-color: white;">
                 <div id="vf"></div>
                 <script>
                     function drawMusic(xml) {
